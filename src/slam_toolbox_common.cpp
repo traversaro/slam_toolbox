@@ -52,6 +52,11 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
     this->declare_parameter(
       "stack_size_to_use", rclcpp::ParameterType::PARAMETER_INTEGER, descriptor);
     if (this->get_parameter("stack_size_to_use", stack_size)) {
+#ifdef _WIN32
+      if (stack_size != 40'000'000) {
+        RCLCPP_WARN(get_logger(), "Can't dynamically change stack size on Windows to %i. Node using stack size 40000000", (int)stack_size);
+      }
+#else
       RCLCPP_INFO(get_logger(), "Node using stack size %i", (int)stack_size);
       const rlim_t max_stack_size = stack_size;
       struct rlimit stack_limit;
@@ -60,6 +65,7 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
         stack_limit.rlim_cur = stack_size;
       }
       setrlimit(RLIMIT_STACK, &stack_limit);
+#endif
     }
   }
   // server side never times out from lifecycle manager
